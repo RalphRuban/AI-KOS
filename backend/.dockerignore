@@ -1,0 +1,13 @@
+.env
+.env.*
+__pycache__/
+*.py[cod]
+*.pyo
+*.json
+chroma_store/
+uploads/
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore

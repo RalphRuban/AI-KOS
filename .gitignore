@@ -1,0 +1,36 @@
+# Environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+.venv/
+
+# Chroma DB
+backend/chroma_store/
+
+# Uploaded files
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Metadata
+backend/documents_metadata.json
+
+# User data (password hashes)
+backend/users.json
+
+# Stats (user activity tracking)
+backend/stats.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
