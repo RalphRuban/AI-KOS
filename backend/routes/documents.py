@@ -11,7 +11,11 @@ router = APIRouter()
 def get_documents(
     user: dict = Depends(get_current_user),
 ):
-    docs = list_documents(user_id=user["user_id"])
+    user_id = user.get("user_id", user.get("sub"))
+    if user.get("role") in ["admin", "Enterprise Administrator"]:
+        user_id = None
+        
+    docs = list_documents(user_id=user_id)
     total_chunks = sum(d["chunk_count"] for d in docs)
     return {
         "documents": docs,

@@ -132,9 +132,26 @@ class SearchAgent:
                 date_filter = {"uploaded_at": {"$lte": date_to}}
             where_filters.append(date_filter)
 
+        # Clamp n_results to actual collection size to avoid ChromaDB InvalidArgumentError
+        try:
+            collection_count = collection.count()
+        except Exception:
+            collection_count = 0
+
+        if collection_count == 0:
+            return {
+                "query": query,
+                "results": [],
+                "total_results": 0,
+                "search_mode": "hybrid",
+                "message": "No documents have been uploaded yet.",
+            }
+
+        n_results = min(top_k * 2, collection_count)
+
         query_kwargs = {
             "query_texts": [query],
-            "n_results": top_k * 2,
+            "n_results": n_results,
             "include": ["documents", "metadatas", "distances"],
         }
 
@@ -144,7 +161,12 @@ class SearchAgent:
                 else {"$and": where_filters}
             )
 
-        vector_raw = collection.query(**query_kwargs)
+        try:
+            vector_raw = collection.query(**query_kwargs)
+        except Exception as e:
+            import logging
+            logging.getLogger("search_agent").warning(f"Vector query failed: {e}")
+            vector_raw = {"documents": [[]], "metadatas": [[]], "distances": [[]]}
 
         v_docs = vector_raw.get("documents", [[]])[0]
         v_metas = vector_raw.get("metadatas", [[]])[0]
@@ -191,10 +213,30 @@ class SearchAgent:
                 "file_type": meta.get("file_type"),
                 "chunk": item["document"],
                 "snippet": _build_snippet(item["document"], query),
-                "score": round(item["rrf_score"], 4),
-                "vector_score": round(item["vector_score"], 4),
-                "bm25_score": round(item["bm25_score"], 4),
+                "score": item["rrf_score"],          # raw, normalized below
+                "vector_score": item["vector_score"],
+                "bm25_score": item["bm25_score"],
             })
+
+        # --- Normalize scores to [0, 1] relative to the best result ---
+        # RRF raw scores are tiny fractions (e.g. 0.016).  Showing them as
+        # percentages directly gives nonsensical 1-3 % values for every hit.
+        # We scale so the top result = 1.0 and the others are proportional.
+        if final_results:
+            max_score = max(r["score"] for r in final_results)
+            min_score = min(r["score"] for r in final_results)
+            spread = max_score - min_score
+
+            for r in final_results:
+                if spread > 0:
+                    # Scale to [0.5, 1.0] so even the worst result looks like
+                    # a genuine match (it was still returned by the search).
+                    normalized = 0.5 + 0.5 * (r["score"] - min_score) / spread
+                else:
+                    normalized = 1.0
+                r["score"] = round(normalized, 4)
+                r["vector_score"] = round(r["vector_score"], 4)
+                r["bm25_score"] = round(r["bm25_score"], 4)
 
         return {
             "query": query,

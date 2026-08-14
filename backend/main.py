@@ -17,6 +17,9 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+os.makedirs("uploads/avatars", exist_ok=True)
 
 from routes import (
     auth,
@@ -32,6 +35,7 @@ from routes import (
     recommendations,
     dashboard,
     relationships,
+    notifications,
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -87,6 +91,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/avatars", StaticFiles(directory="uploads/avatars"), name="avatars")
 
 
 # -----------------------------
@@ -156,6 +162,11 @@ app.include_router(
 app.include_router(
     relationships.router,
     tags=["Knowledge Graph"]
+)
+
+app.include_router(
+    notifications.router,
+    tags=["Notifications"]
 )
 
 

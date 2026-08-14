@@ -12,6 +12,7 @@ def store_chunks(
     filename: str,
     chunks: list[str],
     file_type: str = None,
+    category: str = "General",
     user_id: str = None,
 ) -> int:
     """Embeds and stores chunks in Chroma. Returns the number stored."""
@@ -31,6 +32,7 @@ def store_chunks(
             "filename": filename,
             "chunk_index": i,
             "file_type": file_type,
+            "category": category,
             "uploaded_at": uploaded_at,
             "user_id": user_id,
         }

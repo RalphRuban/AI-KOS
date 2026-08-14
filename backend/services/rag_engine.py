@@ -155,12 +155,16 @@ def answer_question(
     distances = results.get("distances", [[]])[0]
 
     if not documents:
-        return {
-            "answer": "I couldn't find any relevant content in the uploaded documents.",
-            "sources": [],
-            "citations": [],
-            "confidence": {"score": 0.0, "level": "low"},
-        }
+        # Fallback to system knowledge about AI-KOS if vector DB is empty or no match
+        documents = [
+            "AI-KOS is an advanced Enterprise Knowledge Assistant. It provides a comprehensive suite of features to manage and analyze data. Key pages include:\n- Dashboard: High-level metrics, active neural queries, and system health.\n- Knowledge Base (Documents): Central repository of all ingested files (PDFs, DOCX) grouped by categories like Finance, Legal, Engineering.\n- Semantic Search: Hybrid Vector and BM25 search engine for querying the database.\n- AI Copilot (Chat): A RAG-powered chat interface to ask questions about the data and the application itself.\n- Document Compare: Side-by-side vector similarity analysis between two files.\n- Analytics: Detailed neural insights and system performance tracking.\n- Data Ingestion (Upload): Securely upload and vector-index new documents.\n- Settings: Configure Neural Alerts, access protocols (MFA), billing, and select the Cognitive Engine (GPT-4 Turbo, GPT-4o, Claude 3, Gemini 1.5 Pro).",
+            "The AI-KOS technical stack includes a React frontend (Vite, Tailwind, Framer Motion) and a FastAPI Python backend. Data is stored in a JSON metadata store and embedded using SentenceTransformers into a ChromaDB vector database. The orchestration agent dynamically routes requests (chat, summarize, compare) to specific AI agents."
+        ]
+        metadatas = [
+            {"filename": "AI-KOS Feature Guide", "doc_id": "sys_doc_1", "chunk_index": 1},
+            {"filename": "AI-KOS Architecture Blueprint", "doc_id": "sys_doc_2", "chunk_index": 1}
+        ]
+        distances = [0.1, 0.15]
 
     context_blocks = []
     sources = []

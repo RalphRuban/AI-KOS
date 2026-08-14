@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from routes.auth import get_current_user
 from db.metadata_store import add_document
@@ -12,6 +12,7 @@ from services.extractor import (
     extract_metadata,
     extract_text,
 )
+from services.notifier import notifier
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
+    category: str = Form("General"),
     user: dict = Depends(get_current_user),
 ):
     ext = os.path.splitext(file.filename)[1].lower()
@@ -61,7 +63,8 @@ async def upload_document(
             filename=file.filename,
             chunks=chunks,
             file_type=ext,
-            user_id=user["user_id"],
+            category=category,
+            user_id=user.get("user_id", user.get("sub")),
         )
 
         record = add_document(
@@ -73,8 +76,16 @@ async def upload_document(
             page_count=file_metadata.get("page_count"),
             title=file_metadata.get("title"),
             author=file_metadata.get("author"),
-            user_id=user["user_id"],
+            category=category,
+            user_id=user.get("user_id", user.get("sub")),
         )
+
+        await notifier.broadcast({
+            "type": "success",
+            "title": "Document Indexed",
+            "body": f"'{file.filename}' was successfully uploaded and processed into {stored_count} vector chunks.",
+            "color": "#10b981", # emerald
+        })
 
         return {"message": "Upload successful", "document": record}
 

@@ -140,6 +140,7 @@ def get_user_by_id(user_id: str) -> dict | None:
                 "username": user["username"],
                 "role": user["role"],
                 "created_at": user.get("created_at"),
+                "avatar_url": user.get("avatar_url"),
             }
 
         return None
@@ -156,6 +157,7 @@ def list_users() -> list:
                 "username": u["username"],
                 "role": u["role"],
                 "created_at": u.get("created_at"),
+                "avatar_url": u.get("avatar_url"),
             }
             for u in data.values()
         ]
@@ -175,4 +177,13 @@ def delete_user(user_id: str) -> bool:
         del data[user_id]
         _save(data)
 
+        return True
+
+def update_user_avatar(user_id: str, avatar_url: str) -> bool:
+    with _lock:
+        data = _load()
+        if user_id not in data:
+            return False
+        data[user_id]["avatar_url"] = avatar_url
+        _save(data)
         return True
