@@ -139,7 +139,7 @@ sequenceDiagram
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/rshamith777-cpu/AI-KOS.git
+git clone https://github.com/RalphRuban/AI-KOS.git
 cd AI-KOS
 ```
 
